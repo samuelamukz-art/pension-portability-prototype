@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+prototype.db
+prototype.db.bak
+.env
