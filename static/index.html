@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Pension Portability Prototype</title>
+<style>
+  body{font-family:system-ui,Arial;max-width:960px;margin:24px auto;padding:0 16px;color:#1a1a1a}
+  h1{font-size:22px} h2{font-size:16px;margin-top:28px;border-bottom:1px solid #ddd;padding-bottom:4px}
+  input,button{padding:6px 10px;margin:4px 4px 4px 0;font-size:14px}
+  .card{background:#f7f9fc;border:1px solid #dde3ec;border-radius:8px;padding:12px;margin:10px 0}
+  .score{font-size:28px;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border-bottom:1px solid #eee;padding:6px;text-align:left}
+  .ok{color:#0a7a3a}.warn{color:#b8860b}
+</style>
+</head>
+<body>
+<h1>Pension Portability & AI Risk Dashboard — Prototype</h1>
+
+<h2>1. Login / Register</h2>
+<div class="card">
+  <input id="mid" placeholder="Member ID" value="M001"/>
+  <input id="pw" type="password" placeholder="Password" value="demo1234"/>
+  <button onclick="register()">Register</button>
+  <button onclick="login()">Login</button>
+  <span id="authState" class="warn">not authenticated</span>
+</div>
+
+<h2>2. Consent (required before consolidation)</h2>
+<div class="card">
+  <input id="inst" placeholder="Institution ID" value="INS-A"/>
+  <button onclick="consent()">Grant consent</button>
+  <button onclick="consolidate()">Consolidate contributions</button>
+  <span id="consentState"></span>
+</div>
+
+<h2>3. Member Pension Wallet</h2>
+<div class="card">
+  <div>Total contributions: <b id="total">0</b> USD</div>
+  <table id="contribTable"><thead>
+    <tr><th>Institution</th><th>Employer</th><th>Period</th><th>Type</th><th>Amount</th></tr>
+  </thead><tbody></tbody></table>
+</div>
+
+<h2>4. Employment Transition</h2>
+<div class="card">
+  <input id="fromI" placeholder="From" value="INS-A"/>
+  <input id="toI" placeholder="To" value="INS-B"/>
+  <button onclick="transfer()">Request transfer</button>
+  <span id="transferState"></span>
+</div>
+
+<h2>5. AI Risk & Sustainability Dashboard</h2>
+<div class="card">
+  <button onclick="loadRisk()">Refresh scores</button>
+  <div style="margin-top:10px">
+    Risk: <span id="risk" class="score">–</span>
+    &nbsp;&nbsp; Sustainability: <span id="sus" class="score ok">–</span>
+  </div>
+  <div id="factors" style="font-size:13px;margin-top:8px"></div>
+</div>
+
+<h2>6. Audit Trail (last 50 events)</h2>
+<div class="card"><table id="auditTable"><thead>
+  <tr><th>Actor</th><th>Action</th><th>Hash</th></tr></thead><tbody></tbody></table></div>
+
+<script>
+let token = null;
+const H = () => ({'Content-Type':'application/json','Authorization':'Bearer '+token});
+const $ = id => document.getElementById(id);
+
+async function register(){
+  const r = await fetch(`/api/v1/auth/register?member_id=${$('mid').value}&full_name=Demo&national_id=NID1&password=${$('pw').value}`,{method:'POST'});
+  alert(r.ok ? 'registered' : 'register failed (may already exist)');
+}
+async function login(){
+  const r = await fetch(`/api/v1/auth/login?member_id=${$('mid').value}&password=${$('pw').value}`,{method:'POST'});
+  if(!r.ok){ $('authState').textContent='login failed'; return; }
+  token = (await r.json()).access_token;
+  $('authState').textContent='authenticated ✓'; $('authState').className='ok';
+  await loadAudit();
+}
+async function consent(){
+  const r = await fetch('/api/v1/members/consent',{method:'POST',headers:H(),
+    body:JSON.stringify({member_id:$('mid').value, institution_id:$('inst').value})});
+  $('consentState').textContent = r.ok ? 'consent granted ✓' : 'consent failed';
+}
+async function consolidate(){
+  const r = await fetch(`/api/v1/members/${$('mid').value}/contributions`,{headers:H()});
+  if(!r.ok){ alert('consolidation failed'); return; }
+  const d = await r.json();
+  $('total').textContent = d.total.toFixed(2);
+  const tb = $('contribTable').querySelector('tbody'); tb.innerHTML='';
+  d.contributions.forEach(c=>{
+    tb.innerHTML += `<tr><td>${c.institution_id}</td><td>${c.employer_id}</td>
+      <td>${c.period}</td><td>${c.contribution_type}</td><td>${c.amount.toFixed(2)}</td></tr>`;
+  });
+}
+async function transfer(){
+  const r = await fetch('/api/v1/transfers',{method:'POST',headers:H(),
+    body:JSON.stringify({member_id:$('mid').value, from_institution:$('fromI').value, to_institution:$('toI').value})});
+  const d = await r.json();
+  $('transferState').textContent = `transfer ${d.transfer_id?.slice(0,8)} → ${d.status}`;
+}
+async function loadRisk(){
+  const r = await fetch(`/api/v1/risk/member/${$('mid').value}`,{headers:H()});
+  if(!r.ok){ alert('risk load failed'); return; }
+  const d = await r.json();
+  $('risk').textContent = d.risk_score.toFixed(2);
+  $('sus').textContent  = d.sustainability_score.toFixed(2);
+  $('factors').innerHTML = '<b>Top factors:</b> ' +
+    d.top_factors.map(f=>`${f.factor} (${f.weight})`).join(' • ') +
+    ` &nbsp;|&nbsp; confidence ${d.confidence}`;
+}
+async function loadAudit(){
+  const r = await fetch('/api/v1/audit',{headers:H()});
+  if(!r.ok) return;
+  const rows = await r.json();
+  const tb = $('auditTable').querySelector('tbody'); tb.innerHTML='';
+  rows.forEach(a=>tb.innerHTML += `<tr><td>${a.actor}</td><td>${a.action}</td><td>${a.entry_hash}</td></tr>`);
+}
+</script>
+</body>
+</html>
