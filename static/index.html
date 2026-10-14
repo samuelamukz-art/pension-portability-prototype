@@ -1,123 +1,1160 @@
-<!DOCTYPE html>
-<html>
+﻿<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>Pension Portability Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Pension Portability Platform · AI Risk & Sustainability</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path fill='%2300c2a8' d='M32 6l20 10v18c0 12-8 22-20 26C20 56 12 46 12 34V16L32 6z'/></svg>">
 <style>
-  body{font-family:system-ui,Arial;max-width:960px;margin:24px auto;padding:0 16px;color:#1a1a1a}
-  h1{font-size:22px} h2{font-size:16px;margin-top:28px;border-bottom:1px solid #ddd;padding-bottom:4px}
-  input,button{padding:6px 10px;margin:4px 4px 4px 0;font-size:14px}
-  .card{background:#f7f9fc;border:1px solid #dde3ec;border-radius:8px;padding:12px;margin:10px 0}
-  .score{font-size:28px;font-weight:700}
+  :root{
+    --navy-900:#0a1428; --navy-800:#0f1c38; --navy-700:#16264a; --navy-600:#1e3159;
+    --line:rgba(148,180,220,0.14); --line-2:rgba(148,180,220,0.24);
+    --ink:#e8f0ff; --ink-muted:#93a6c8; --ink-dim:#66799c;
+    --teal:#00c2a8; --teal-soft:rgba(0,194,168,0.14);
+    --gold:#e0b64a; --gold-soft:rgba(224,182,74,0.14);
+    --coral:#e26a6a; --coral-soft:rgba(226,106,106,0.14);
+    --violet:#7a86ff;
+    --radius-lg:18px; --radius-md:12px; --radius-sm:8px;
+    --shadow-md:0 6px 24px rgba(4,10,26,0.45);
+    --shadow-lg:0 24px 60px rgba(4,10,26,0.55);
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;min-height:100%}
+  html{scroll-behavior:smooth}
+  body.login-mode{min-height:100vh;display:grid;place-items:center;padding:24px}
+  .login-gate{width:min(100%,410px)}
+  .login-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .login-brand .brand-mark{width:44px;height:44px}
+  .login-brand h1{font-size:17px;margin:0}
+  .login-brand small{display:block;color:var(--ink-muted);font-size:10px;letter-spacing:1.3px;text-transform:uppercase}
+  .login-card{padding:24px}
+  .login-card .card-head{margin-bottom:22px}
+  .login-card form{display:flex;flex-direction:column;gap:15px}
+  .login-card form[hidden]{display:none}
+  .login-card .login-actions{display:flex;gap:10px;margin-top:4px}
+  .login-card .login-actions button{flex:1}
+  .login-card .login-hint{margin:16px 0 0;color:var(--ink-dim);font-size:11px;text-align:center}
+  body{
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 700px at 80% -10%,rgba(0,194,168,0.10),transparent 60%),
+      radial-gradient(900px 600px at -10% 20%,rgba(122,134,255,0.10),transparent 55%),
+      linear-gradient(180deg,var(--navy-900) 0%,var(--navy-800) 60%,var(--navy-900) 100%);
+    padding:32px 24px 96px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  body::before{
+    content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(148,180,220,0.05) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(148,180,220,0.05) 1px,transparent 1px);
+    background-size:48px 48px;
+    -webkit-mask-image:radial-gradient(ellipse at 50% 30%,#000 40%,transparent 85%);
+            mask-image:radial-gradient(ellipse at 50% 30%,#000 40%,transparent 85%);
+    animation:gridDrift 40s linear infinite;
+  }
+  @keyframes gridDrift{from{background-position:0 0,0 0}to{background-position:480px 480px,480px 480px}}
+  body::after{
+    content:'';position:fixed;top:-15vh;right:-10vw;width:55vw;height:55vw;
+    border-radius:50%;
+    background:radial-gradient(circle at center,rgba(0,194,168,0.16),transparent 60%);
+    filter:blur(60px);z-index:-1;pointer-events:none;
+    animation:orbFloat 24s ease-in-out infinite alternate;
+  }
+  @keyframes orbFloat{from{transform:translate(0,0) scale(1)}to{transform:translate(-40px,30px) scale(1.1)}}
+  header{
+    max-width:1240px;margin:0 auto 32px;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:20px;flex-wrap:wrap;
+    padding-bottom:24px;border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:16px}
+  .brand-mark{
+    width:52px;height:52px;border-radius:14px;
+    background:linear-gradient(145deg,var(--navy-600),var(--navy-700));
+    border:1px solid var(--line-2);display:grid;place-items:center;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),var(--shadow-md);
+    transition:transform .6s var(--ease);
+  }
+  .brand-mark:hover{transform:rotate(-6deg) scale(1.05)}
+  .brand-mark svg{width:30px;height:30px}
+  .brand h1{margin:0;font-size:19px;font-weight:600;letter-spacing:-.2px;color:var(--ink)}
+  .brand small{display:block;color:var(--ink-muted);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+  .role-badge{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:9px 16px;border-radius:999px;
+    background:rgba(15,28,56,0.7);border:1px solid var(--line-2);
+    font-size:12px;letter-spacing:.4px;color:var(--ink-muted);
+    backdrop-filter:blur(10px);transition:all .4s var(--ease);
+  }
+  .role-badge::before{
+    content:'';width:8px;height:8px;border-radius:50%;
+    background:var(--ink-dim);box-shadow:0 0 0 3px rgba(102,121,156,0.2);
+    transition:all .4s var(--ease);
+  }
+  .role-badge.live{color:#a5e8dc;border-color:rgba(0,194,168,0.4)}
+  .role-badge.live::before{
+    background:var(--teal);box-shadow:0 0 0 4px rgba(0,194,168,0.25);
+    animation:pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{box-shadow:0 0 0 4px rgba(0,194,168,0.25)}
+    50%{box-shadow:0 0 0 8px rgba(0,194,168,0.08)}
+  }
+  main{
+    max-width:1240px;margin:0 auto;display:grid;gap:22px;
+    grid-template-columns:repeat(12,1fr);
+  }
+  .col-4{grid-column:span 4}
+  .col-6{grid-column:span 6}
+  .col-8{grid-column:span 8}
+  .col-12{grid-column:span 12}
+  @media(max-width:900px){ .col-4,.col-6,.col-8{grid-column:span 12} }
+  .card{
+    background:linear-gradient(180deg,rgba(30,49,89,0.55),rgba(15,28,56,0.7));
+    border:1px solid var(--line);border-radius:var(--radius-lg);
+    padding:24px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:var(--shadow-md);position:relative;overflow:hidden;
+    transition:transform .4s var(--ease),border-color .4s var(--ease),box-shadow .4s var(--ease);
+    animation:cardIn .7s var(--ease) both;
+  }
+  .card:hover{transform:translateY(-2px);border-color:var(--line-2);box-shadow:var(--shadow-lg)}
+  @keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.995)}to{opacity:1;transform:translateY(0) scale(1)}}
+  .card::after{
+    content:'';position:absolute;top:0;left:0;height:2px;width:0;
+    background:linear-gradient(90deg,var(--teal),transparent);
+    transition:width 1s var(--ease);
+  }
+  .card:hover::after{width:100%}
+  .card-head{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:18px;gap:12px;flex-wrap:wrap;
+  }
+  .card-title{
+    display:flex;align-items:center;gap:12px;
+    font-size:12px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;
+    color:var(--ink-muted);
+  }
+  .card-num{
+    width:26px;height:26px;border-radius:8px;
+    background:rgba(0,194,168,0.10);border:1px solid rgba(0,194,168,0.3);
+    color:var(--teal);display:grid;place-items:center;
+    font-size:12px;font-weight:700;
+  }
+  input{
+    width:100%;background:rgba(10,20,40,0.6);
+    border:1px solid var(--line);color:var(--ink);
+    padding:11px 14px;border-radius:var(--radius-sm);
+    font-size:14px;font-family:inherit;outline:none;
+    transition:border-color .3s var(--ease),background .3s var(--ease),box-shadow .3s var(--ease);
+  }
+  input:focus{border-color:var(--teal);background:rgba(0,194,168,0.06);box-shadow:0 0 0 3px rgba(0,194,168,0.15)}
+  input::placeholder{color:var(--ink-dim)}
+  .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+  .field label{font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:1px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+  button{
+    position:relative;overflow:hidden;
+    background:linear-gradient(180deg,#00d1b5,#00a48d);
+    color:#04221d;border:none;padding:11px 20px;
+    border-radius:var(--radius-sm);font-size:13px;font-weight:600;
+    letter-spacing:.3px;font-family:inherit;cursor:pointer;
+    box-shadow:0 6px 20px rgba(0,194,168,0.25),inset 0 1px 0 rgba(255,255,255,0.25);
+    transition:transform .2s var(--ease),box-shadow .3s var(--ease),filter .3s var(--ease);
+  }
+  button:hover{filter:brightness(1.06);box-shadow:0 10px 26px rgba(0,194,168,0.4),inset 0 1px 0 rgba(255,255,255,0.3)}
+  button:active{transform:translateY(1px)}
+  button::before{
+    content:'';position:absolute;top:0;left:-120%;width:120%;height:100%;
+    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,0.45) 50%,transparent 70%);
+    transition:left .8s var(--ease);
+  }
+  button:hover::before{left:120%}
+  button.secondary{background:transparent;color:var(--ink);border:1px solid var(--line-2);box-shadow:none}
+  button.secondary:hover{border-color:var(--teal);color:#a5e8dc;background:rgba(0,194,168,0.06)}
+  button.gold{
+    background:linear-gradient(180deg,#e6c15f,#c89a24);
+    color:#2a1f04;box-shadow:0 6px 20px rgba(224,182,74,0.28),inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  button.ghost-mini{
+    background:transparent;color:var(--ink-muted);border:1px solid var(--line);
+    padding:6px 10px;font-size:11px;box-shadow:none;border-radius:6px;
+  }
+  button.ghost-mini:hover{color:var(--ink);border-color:var(--line-2);background:rgba(148,180,220,0.05)}
+  .pill{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:5px 12px;border-radius:999px;
+    font-size:11px;font-weight:600;letter-spacing:.4px;
+    background:rgba(148,180,220,0.08);color:var(--ink-muted);
+    border:1px solid var(--line);transition:all .35s var(--ease);
+    white-space:nowrap;
+  }
+  .pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.85}
+  .pill.ok{color:#7fe4d0;background:var(--teal-soft);border-color:rgba(0,194,168,0.4)}
+  .pill.warn{color:#f0d28a;background:var(--gold-soft);border-color:rgba(224,182,74,0.4)}
+  .pill.err{color:#f0a5a5;background:var(--coral-soft);border-color:rgba(226,106,106,0.4)}
+  .wallet-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px}
+  .wallet-total{display:flex;flex-direction:column;gap:4px}
+  .wallet-total .label{color:var(--ink-muted);font-size:11px;letter-spacing:1.6px;text-transform:uppercase}
+  .wallet-total .amount{
+    display:flex;align-items:baseline;gap:10px;
+    font-size:38px;font-weight:700;letter-spacing:-1px;
+    font-variant-numeric:tabular-nums;
+    background:linear-gradient(120deg,#eaf6ff,#7fe4d0 60%,#e0b64a);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    transition:transform .5s var(--ease);
+  }
+  .wallet-total .amount.bump{animation:bump .5s var(--ease)}
+  @keyframes bump{50%{transform:scale(1.04)}}
+  .wallet-total .currency{font-size:14px;font-weight:500;color:var(--ink-muted);letter-spacing:.5px}
   table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{border-bottom:1px solid #eee;padding:6px;text-align:left}
-  .ok{color:#0a7a3a}.warn{color:#b8860b}
+  thead th{
+    text-align:left;color:var(--ink-muted);font-weight:500;font-size:10.5px;
+    letter-spacing:1.4px;text-transform:uppercase;
+    padding:10px 12px;border-bottom:1px solid var(--line);
+  }
+  tbody td{padding:12px;border-bottom:1px solid rgba(148,180,220,0.06);font-variant-numeric:tabular-nums}
+  tbody tr{
+    opacity:0;transform:translateY(6px);
+    animation:rowIn .5s var(--ease) forwards;
+    transition:background .3s var(--ease);
+  }
+  tbody tr:hover{background:rgba(0,194,168,0.05)}
+  @keyframes rowIn{to{opacity:1;transform:translateY(0)}}
+  .amount-cell{font-weight:600;color:#a5e8dc;text-align:right}
+  .gauges{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+  .gauge{
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+    padding:18px 12px;border-radius:var(--radius-md);
+    background:linear-gradient(180deg,rgba(30,49,89,0.4),rgba(10,20,40,0.5));
+    border:1px solid var(--line);
+    transition:border-color .4s var(--ease),transform .4s var(--ease);
+  }
+  .gauge:hover{border-color:var(--line-2);transform:translateY(-1px)}
+  .gauge svg{width:120px;height:120px;transform:rotate(-90deg)}
+  .gauge circle{fill:none;stroke-width:9;stroke-linecap:round}
+  .gauge .track{stroke:rgba(148,180,220,0.10)}
+  .gauge .fill{transition:stroke-dashoffset 1.35s cubic-bezier(.2,.75,.25,1),filter .45s ease}
+  .gauge.is-updating .fill{filter:drop-shadow(0 0 5px currentColor)}
+  .gauge-value{font-size:24px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums;margin-top:-4px}
+  .gauge-label{font-size:10.5px;color:var(--ink-muted);letter-spacing:1.4px;text-transform:uppercase}
+  .gauge.risk .gauge-value{color:#f0a5a5}
+  .gauge.sus .gauge-value{color:#7fe4d0}
+  .factors{
+    display:flex;flex-direction:column;gap:8px;
+    padding:14px;border-radius:var(--radius-md);
+    background:rgba(10,20,40,0.5);border:1px solid var(--line);font-size:12.5px;
+  }
+  .factor-row{display:flex;align-items:center;gap:12px;animation:factorReveal .45s var(--ease) both}
+  @keyframes factorReveal{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+  .factor-name{flex:1;color:var(--ink-muted);font-size:11.5px;letter-spacing:.4px}
+  .factor-bar{flex:1.2;height:4px;border-radius:999px;background:rgba(148,180,220,0.10);overflow:hidden}
+  .factor-fill{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--violet));transition:width 1.05s cubic-bezier(.2,.75,.25,1)}
+  .factor-weight{width:44px;text-align:right;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;font-size:11.5px}
+  .risk-meta{display:flex;justify-content:space-between;gap:12px;color:var(--ink-muted);font-size:11px;padding:2px 4px}
+  .fund-risk-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+  .fund-risk-card{padding:12px;border:1px solid var(--line);border-radius:var(--radius-md);background:rgba(10,20,40,0.35)}
+  .fund-risk-card.score-reveal{animation:scoreReveal .55s var(--ease) both}
+  @keyframes scoreReveal{from{opacity:.35;transform:translateY(8px);border-color:rgba(0,194,168,0)}to{opacity:1;transform:translateY(0);border-color:var(--line)}}
+  .fund-risk-title{font-size:11px;color:var(--ink-muted);letter-spacing:.7px;text-transform:uppercase}
+  .fund-risk-values{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:12px;font-variant-numeric:tabular-nums}
+  .fund-risk-values strong{color:var(--ink)}
+  .fund-risk-confidence{margin-top:5px;color:var(--ink-muted);font-size:10.5px}
+  .risk-controls{display:flex;align-items:center;gap:10px}
+  .risk-live-status{min-width:112px;text-align:right;color:var(--ink-dim);font-size:10.5px}
+  .risk-live-status::before{content:'';display:inline-block;width:6px;height:6px;margin:0 6px 1px 0;border-radius:50%;background:var(--ink-dim)}
+  .risk-live-status.loading{color:#7fe4d0}
+  .risk-live-status.loading::before{background:var(--teal);animation:statusPulse 1s ease-in-out infinite}
+  @keyframes statusPulse{50%{opacity:.35;box-shadow:0 0 0 4px rgba(0,194,168,.12)}}
+  .risk-controls button:disabled{opacity:.65;cursor:wait}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+  @media(max-width:640px){.fund-risk-grid{grid-template-columns:1fr}.risk-meta{flex-direction:column}}
+  .audit-head-actions{display:flex;align-items:center;gap:12px}
+  .audit-integrity{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;color:var(--ink-muted);font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+  .audit-integrity::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--ink-dim)}
+  .audit-integrity.verified{color:#7fe4d0;border-color:rgba(0,194,168,.28);background:rgba(0,194,168,.07)}
+  .audit-integrity.verified::before{background:var(--teal);box-shadow:0 0 0 3px rgba(0,194,168,.13)}
+  .audit-integrity.broken{color:#ffaaaa;border-color:rgba(226,106,106,.35);background:rgba(226,106,106,.07)}
+  .audit-integrity.broken::before{background:var(--coral)}
+  .audit-integrity.checking::before{background:var(--gold);animation:statusPulse 1s ease-in-out infinite}
+  .audit-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 20px}
+  .audit-stat{padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius-md);background:linear-gradient(135deg,rgba(30,49,89,.4),rgba(10,20,40,.4))}
+  .audit-stat-label{color:var(--ink-muted);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+  .audit-stat-value{display:block;margin-top:5px;color:var(--ink);font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+  .audit-stat-note{display:block;color:var(--ink-dim);font-size:10px;margin-top:2px}
+  .audit-list-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 2px 10px}
+  .audit-list-title{font-size:12px;font-weight:650;color:var(--ink)}
+  .audit-list-caption{font-size:10.5px;color:var(--ink-dim)}
+  .audit-rail{position:relative;padding:2px 8px 2px 24px;max-height:430px;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:rgba(148,180,220,.35) transparent;scrollbar-width:thin}
+  .audit-rail::before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:1px;background:linear-gradient(180deg,rgba(0,194,168,.55),var(--line-2) 40%,rgba(122,134,255,.2))}
+  .audit-item{position:relative;margin:0 0 9px;padding:12px 14px;border:1px solid rgba(148,180,220,.11);border-radius:10px;background:rgba(8,18,37,.34);transition:background .25s ease,border-color .25s ease,transform .25s ease;animation:auditIn .42s var(--ease) both}
+  .audit-item:hover{background:rgba(25,43,76,.58);border-color:rgba(148,180,220,.24);transform:translateX(2px)}
+  @keyframes auditIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+  .audit-item::before{content:'';position:absolute;left:-21px;top:18px;width:9px;height:9px;border-radius:50%;background:var(--navy-800);border:2px solid var(--teal);box-shadow:0 0 0 3px rgba(0,194,168,.08)}
+  .audit-event-main{display:grid;grid-template-columns:minmax(125px, .8fr) minmax(170px,1.35fr) minmax(140px,1fr) auto;gap:14px;align-items:center}
+  .audit-event-actor{min-width:0;display:flex;align-items:center;gap:9px}
+  .audit-avatar{width:27px;height:27px;display:grid;place-items:center;flex:none;border-radius:8px;background:rgba(122,134,255,.13);border:1px solid rgba(122,134,255,.2);color:#c2c8ff;font-size:9px;font-weight:750;letter-spacing:.3px}
+  .audit-actor{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650;font-size:12px;color:var(--ink)}
+  .audit-action{display:inline-flex;align-items:center;gap:8px;min-width:0;width:max-content;max-width:100%;font-size:10px;font-weight:700;letter-spacing:.45px;color:#83e6d5}
+  .audit-action::before{content:'';width:6px;height:6px;flex:none;border-radius:50%;background:var(--teal)}
+  .audit-action.event-transfer{color:#c3c8ff}.audit-action.event-transfer::before{background:var(--violet)}
+  .audit-action.event-access{color:#a9c8ff}.audit-action.event-access::before{background:#70a8ff}
+  .audit-action.event-consent{color:#f1d28b}.audit-action.event-consent::before{background:var(--gold)}
+  .audit-action.event-risk{color:#ffaaaa}.audit-action.event-risk::before{background:var(--coral)}
+  .audit-caption{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-dim);font-size:10px;margin-top:2px}
+  .audit-hash{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:Consolas,'JetBrains Mono',monospace;font-size:10px;color:var(--ink-muted);letter-spacing:.2px}
+  .audit-hash-label{color:var(--ink-dim);margin-right:5px;font-family:inherit}
+  .audit-time{white-space:nowrap;text-align:right;font-size:10px;color:var(--ink-muted);font-variant-numeric:tabular-nums}
+  .audit-time time{display:block;color:var(--ink);font-size:11px;font-weight:600}
+  .audit-proof{margin:10px 0 0 36px;padding-top:8px;border-top:1px solid rgba(148,180,220,.08)}
+  .audit-proof summary{width:max-content;cursor:pointer;color:var(--ink-dim);font-size:10px;list-style:none}
+  .audit-proof summary::-webkit-details-marker{display:none}
+  .audit-proof summary::before{content:'+';display:inline-grid;place-items:center;width:15px;height:15px;margin-right:6px;border:1px solid var(--line-2);border-radius:4px;color:var(--teal)}
+  .audit-proof[open] summary::before{content:'−'}
+  .audit-proof-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+  .audit-proof-field{min-width:0}
+  .audit-proof-field span{display:block;margin-bottom:4px;color:var(--ink-dim);font-size:9px;text-transform:uppercase;letter-spacing:.7px}
+  .audit-proof-field code{display:block;overflow-wrap:anywhere;color:var(--ink-muted);font:9px/1.5 Consolas,'JetBrains Mono',monospace}
+  .audit-empty{padding:38px 16px;text-align:center;color:var(--ink-muted);font-size:12px;border:1px dashed var(--line-2);border-radius:var(--radius-md)}
+  @media(max-width:760px){.audit-event-main{grid-template-columns:minmax(120px,.8fr) minmax(130px,1.2fr) auto}.audit-hash{grid-column:2}.audit-time{grid-column:3;grid-row:1}.audit-proof-grid{grid-template-columns:1fr}}
+  @media(max-width:520px){.audit-summary{grid-template-columns:1fr}.audit-head-actions{width:100%;justify-content:space-between}.audit-event-main{grid-template-columns:1fr auto;gap:8px}.audit-event-actor{grid-column:1}.audit-action{grid-column:1}.audit-hash{grid-column:1}.audit-time{grid-column:2;grid-row:1/4}.audit-proof{margin-left:0}}
+  #toasts{position:fixed;bottom:28px;right:28px;display:flex;flex-direction:column;gap:10px;z-index:1000;pointer-events:none}
+  .toast{
+    display:flex;align-items:center;gap:12px;
+    min-width:250px;max-width:340px;padding:13px 16px;
+    background:linear-gradient(180deg,rgba(30,49,89,0.95),rgba(15,28,56,0.95));
+    border:1px solid var(--line-2);border-left:3px solid var(--teal);
+    border-radius:var(--radius-sm);color:var(--ink);font-size:13px;
+    box-shadow:var(--shadow-lg);backdrop-filter:blur(12px);
+    animation:toastIn .4s var(--ease) both,toastOut .4s var(--ease) 3.6s both;
+  }
+  .toast::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0}
+  .toast.err{border-left-color:var(--coral)}
+  .toast.err::before{background:var(--coral)}
+  .toast.warn{border-left-color:var(--gold)}
+  .toast.warn::before{background:var(--gold)}
+  @keyframes toastIn{from{opacity:0;transform:translateX(20px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes toastOut{to{opacity:0;transform:translateX(20px)}}
+  footer{
+    max-width:1240px;margin:48px auto 0;padding-top:24px;
+    border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
+    color:var(--ink-dim);font-size:11.5px;letter-spacing:.4px;
+  }
+  footer code{background:rgba(148,180,220,0.08);padding:2px 8px;border-radius:6px;font-family:Consolas,monospace;font-size:11px;color:var(--ink-muted)}
 </style>
 </head>
-<body>
-<h1>Pension Portability & AI Risk Dashboard — Prototype</h1>
+<body class="login-mode">
 
-<h2>1. Login / Register</h2>
-<div class="card">
-  <input id="mid" placeholder="Member ID" value="M001"/>
-  <input id="pw" type="password" placeholder="Password" value="demo1234"/>
-  <button onclick="register()">Register</button>
-  <button onclick="login()">Login</button>
-  <span id="authState" class="warn">not authenticated</span>
-</div>
-
-<h2>2. Consent (required before consolidation)</h2>
-<div class="card">
-  <input id="inst" placeholder="Institution ID" value="INS-A"/>
-  <button onclick="consent()">Grant consent</button>
-  <button onclick="consolidate()">Consolidate contributions</button>
-  <span id="consentState"></span>
-</div>
-
-<h2>3. Member Pension Wallet</h2>
-<div class="card">
-  <div>Total contributions: <b id="total">0</b> USD</div>
-  <table id="contribTable"><thead>
-    <tr><th>Institution</th><th>Employer</th><th>Period</th><th>Type</th><th>Amount</th></tr>
-  </thead><tbody></tbody></table>
-</div>
-
-<h2>4. Employment Transition</h2>
-<div class="card">
-  <input id="fromI" placeholder="From" value="INS-A"/>
-  <input id="toI" placeholder="To" value="INS-B"/>
-  <button onclick="transfer()">Request transfer</button>
-  <span id="transferState"></span>
-</div>
-
-<h2>5. AI Risk & Sustainability Dashboard</h2>
-<div class="card">
-  <button onclick="loadRisk()">Refresh scores</button>
-  <div style="margin-top:10px">
-    Risk: <span id="risk" class="score">–</span>
-    &nbsp;&nbsp; Sustainability: <span id="sus" class="score ok">–</span>
+<section class="login-gate" id="loginGate" aria-label="Member sign in">
+  <div class="login-brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M32 6l20 10v18c0 12-8 22-20 26C20 56 12 46 12 34V16L32 6z" fill="none" stroke="#00c2a8" stroke-width="2.4" stroke-linejoin="round"/><path d="M22 34l6 6 14-16" fill="none" stroke="#e0b64a" stroke-width="3" stroke-linecap="round"/></svg>
+    </div>
+    <div><h1>Pension Portability Platform</h1><small>Secure member access</small></div>
   </div>
-  <div id="factors" style="font-size:13px;margin-top:8px"></div>
+  <section class="card login-card">
+    <div class="card-head">
+      <div class="card-title"><span class="card-num">1</span> Authentication</div>
+      <span id="authState" class="pill">guest</span>
+    </div>
+    <form id="loginForm" onsubmit="event.preventDefault(); login()">
+      <div class="field"><label for="mid">Member ID</label><input id="mid" placeholder="Enter your member ID" autocomplete="username" required autofocus/></div>
+      <div class="field"><label for="pw">Password</label><input id="pw" type="password" placeholder="Enter your password" autocomplete="current-password" required/></div>
+      <div class="login-actions"><button type="submit">Sign In</button><button class="secondary" type="button" onclick="showRegister(true)">Register</button></div>
+    </form>
+    <form id="registerForm" hidden onsubmit="event.preventDefault(); register()">
+      <div class="field"><label for="registerName">Full name</label><input id="registerName" autocomplete="name" required/></div>
+      <div class="field"><label for="registerNationalId">National ID</label><input id="registerNationalId" autocomplete="off" required/></div>
+      <div class="field"><label for="registerMid">Member ID</label><input id="registerMid" autocomplete="username" required/></div>
+      <div class="field"><label for="registerPassword">Password</label><input id="registerPassword" type="password" autocomplete="new-password" required/></div>
+      <div class="login-actions"><button type="submit">Create Account</button><button class="secondary" type="button" onclick="showRegister(false)">Back to Sign In</button></div>
+    </form>
+    <p class="login-hint">Sign in to access your pension portability dashboard.</p>
+  </section>
+</section>
+
+<div id="appShell" hidden>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#00c2a8"/>
+            <stop offset="1" stop-color="#7a86ff"/>
+          </linearGradient>
+        </defs>
+        <path d="M32 6l20 10v18c0 12-8 22-20 26C20 56 12 46 12 34V16L32 6z"
+              fill="none" stroke="url(#g1)" stroke-width="2.4" stroke-linejoin="round"/>
+        <path d="M22 34l6 6 14-16" fill="none" stroke="#e0b64a" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Pension Portability Platform</h1>
+      <small>Cloud · AI Risk · Employment Transition</small>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px"><div class="role-badge" id="roleBadge">Member Portal · Guest</div><button class="secondary" id="signOutButton" onclick="logout()">Sign Out</button></div>
+</header>
+
+<main>
+
+  <section class="card col-12" data-card="consents">
+    <div class="card-head">
+      <div class="card-title"><span class="card-num">2b</span> My Consents</div>
+      <button class="ghost-mini" onclick="loadConsents()">Refresh</button>
+    </div>
+    <table id="consentsTable">
+      <thead>
+        <tr>
+          <th>Institution</th>
+          <th>Scope</th>
+          <th>Granted</th>
+          <th>Expires</th>
+          <th>Status</th>
+          <th style="text-align:right">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="6" style="text-align:center;color:var(--ink-dim);padding:20px">
+          Sign in to view your consents.
+        </td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card col-4">
+    <div class="card-head">
+      <div class="card-title"><span class="card-num">2</span> Consent & Aggregation</div>
+      <span id="consentState" class="pill">idle</span>
+    </div>
+    <div class="row" style="flex-direction:column;align-items:stretch">
+      <div class="field">
+        <label for="inst">Institution ID</label>
+        <input id="inst" placeholder="e.g. INS-A" value="INS-A"/>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button class="secondary" onclick="consent()">Grant Consent</button>
+        <button class="gold" onclick="consolidate()">Consolidate</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card col-4">
+    <div class="card-head">
+      <div class="card-title"><span class="card-num">4</span> Employment Transition</div>
+      <span id="transferState" class="pill">idle</span>
+    </div>
+    <div class="row" style="flex-direction:column;align-items:stretch">
+      <div class="field">
+        <label for="fromI">From Institution</label>
+        <input id="fromI" value="INS-A"/>
+      </div>
+      <div class="field">
+        <label for="toI">To Institution</label>
+        <input id="toI" value="INS-B"/>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button onclick="transfer()">Initiate Transfer</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card col-12" data-card="transfers">
+    <div class="card-head">
+      <div class="card-title"><span class="card-num">4b</span> My Transfers</div>
+      <button class="ghost-mini" onclick="loadTransfers()">Refresh</button>
+    </div>
+    <table id="transfersTable">
+      <thead>
+        <tr>
+          <th>Transfer ID</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Status</th>
+          <th>Requested</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="5" style="text-align:center;color:var(--ink-dim);padding:20px">
+          Sign in to view your transfer requests.
+        </td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card col-12">
+    <div class="card-head">
+      <div class="card-title"><span class="card-num">3</span> Member Pension Wallet</div>
+      <span class="pill" id="walletPill">awaiting consolidation</span>
+    </div>
+    <div class="wallet-header">
+      <div class="wallet-total">
+        <span class="label">Total Contributions</span>
+        <div class="amount">
+          <span id="total">0.00</span>
+          <span class="currency">USD</span>
+        </div>
+      </div>
+    </div>
+    <table id="contribTable">
+      <thead>
+        <tr>
+          <th>Institution</th><th>Employer</th><th>Period</th>
+          <th>Type</th><th style="text-align:right">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="5" style="text-align:center;color:var(--ink-dim);padding:24px">
+          Grant consent, then click Consolidate to load contributions.
+        </td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card col-12" data-card="risk-dashboard">
+    <div class="card-head">
+      <div class="card-title"><span class="card-num">5</span> AI Risk & Sustainability</div>
+      <div class="risk-controls"><span class="risk-live-status" id="riskLiveStatus" aria-live="polite">Ready</span><button class="ghost-mini" id="riskRefreshButton" onclick="loadRisk(true)">Refresh Scores</button></div>
+    </div>
+    <div class="gauges">
+      <div class="gauge risk">
+        <svg viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="52"></circle>
+          <circle class="fill" id="ringRiskFill" cx="60" cy="60" r="52"
+                  stroke="#f0a5a5" stroke-dasharray="326.7" stroke-dashoffset="326.7"></circle>
+        </svg>
+        <div class="gauge-value" id="risk">–</div>
+        <div class="gauge-label">Risk Score</div>
+      </div>
+      <div class="gauge sus">
+        <svg viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="52"></circle>
+          <circle class="fill" id="ringSusFill" cx="60" cy="60" r="52"
+                  stroke="#00c2a8" stroke-dasharray="326.7" stroke-dashoffset="326.7"></circle>
+        </svg>
+        <div class="gauge-value" id="sus">–</div>
+        <div class="gauge-label">Sustainability</div>
+      </div>
+    </div>
+    <div class="factors" id="factors">
+      <div class="factor-row">
+        <span class="factor-name">Awaiting consolidated data</span>
+        <span class="factor-bar"><span class="factor-fill"></span></span>
+        <span class="factor-weight">—</span>
+      </div>
+    </div>
+    <div class="risk-meta">
+      <span id="riskConfidence">Confidence: —</span>
+      <span id="riskUpdated">Updated: —</span>
+    </div>
+    <div class="fund-risk-grid" id="fundRiskGrid" aria-live="polite">
+      <div class="fund-risk-card" id="fund-INS-A"><div class="fund-risk-title">INS-A</div><div class="fund-risk-values">Awaiting data</div><div class="fund-risk-confidence"></div></div>
+      <div class="fund-risk-card" id="fund-INS-B"><div class="fund-risk-title">INS-B</div><div class="fund-risk-values">Awaiting data</div><div class="fund-risk-confidence"></div></div>
+      <div class="fund-risk-card" id="fund-INS-C"><div class="fund-risk-title">INS-C</div><div class="fund-risk-values">Awaiting data</div><div class="fund-risk-confidence"></div></div>
+    </div>
+  </section>
+
+  <section class="card col-12">
+    <div class="card-head">
+      <div class="card-title"><span class="card-num">6</span> Audit Trail · Hash-Chained</div>
+      <div class="audit-head-actions"><span id="auditIntegrity" class="audit-integrity" aria-live="polite">Awaiting data</span><button class="ghost-mini" id="auditRefreshButton" onclick="loadAudit(true)">Refresh &amp; Verify</button></div>
+    </div>
+    <div class="audit-summary" aria-label="Audit summary">
+      <div class="audit-stat"><span class="audit-stat-label">Recorded events</span><strong class="audit-stat-value" id="auditEntryCount">—</strong><span class="audit-stat-note">Across the full chain</span></div>
+      <div class="audit-stat"><span class="audit-stat-label">Unique actors</span><strong class="audit-stat-value" id="auditActorCount">—</strong><span class="audit-stat-note">Members and services</span></div>
+      <div class="audit-stat"><span class="audit-stat-label">Latest activity</span><strong class="audit-stat-value" id="auditLatestTime" style="font-size:15px">—</strong><span class="audit-stat-note">Most recent recorded event</span></div>
+    </div>
+    <div class="audit-list-head"><span class="audit-list-title">Recent activity</span><span class="audit-list-caption" id="auditListCaption">Sign in to load the audit chain</span></div>
+    <div class="audit-rail" id="auditRail" role="feed" aria-label="Recent audit events" aria-busy="false">
+      <div class="audit-empty">Sign in to load the audit trail.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div>Pension Portability &amp; AI Risk Dashboard · Prototype</div>
+  <div>
+    <code>pytest -v</code> · <code>openapi.yaml</code> · Objectives 1–3
+  </div>
+</footer>
+
 </div>
 
-<h2>6. Audit Trail (last 50 events)</h2>
-<div class="card"><table id="auditTable"><thead>
-  <tr><th>Actor</th><th>Action</th><th>Hash</th></tr></thead><tbody></tbody></table></div>
+<div id="toasts"></div>
 
 <script>
 let token = null;
-const H = () => ({'Content-Type':'application/json','Authorization':'Bearer '+token});
 const $ = id => document.getElementById(id);
+const H = () => ({'Content-Type':'application/json','Authorization':'Bearer '+token});
+const CIRC = 2 * Math.PI * 52;
+
+function toast(msg, kind='ok'){
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind==='ok' ? '' : ' ' + kind);
+  el.textContent = msg;
+  $('toasts').appendChild(el);
+  setTimeout(()=>el.remove(), 4200);
+}
+function setPill(id, text, kind=''){
+  const el = $(id);
+  if(!el) return;
+  el.textContent = text;
+  el.className = 'pill' + (kind ? ' ' + kind : '');
+}
+function setRole(text, live=false){
+  const el = $('roleBadge');
+  el.textContent = text;
+  el.className = 'role-badge' + (live ? ' live' : '');
+}
+function animateNumber(el, from, to, dur=800){
+  const start = performance.now();
+  function frame(t){
+    const p = Math.min((t-start)/dur, 1);
+    const eased = 1 - Math.pow(1-p, 3);
+    el.textContent = (from + (to-from)*eased).toFixed(2);
+    if(p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+function animateMetric(el, to, {digits=2, suffix='', prefix='', duration=950}={}){
+  const from = parseFloat(el.textContent.replace(/[^0-9.-]/g, '')) || 0;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reducedMotion){ el.textContent = `${prefix}${to.toFixed(digits)}${suffix}`; return; }
+  const start = performance.now();
+  function frame(now){
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const value = from + (to - from) * eased;
+    el.textContent = `${prefix}${value.toFixed(digits)}${suffix}`;
+    if(progress < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+function setRing(fillId, value){
+  const fill = $(fillId);
+  if(!fill) return;
+  fill.style.strokeDashoffset = CIRC * (1 - Math.max(0, Math.min(1, value)));
+}
 
 async function register(){
-  const r = await fetch(`/api/v1/auth/register?member_id=${$('mid').value}&full_name=Demo&national_id=NID1&password=${$('pw').value}`,{method:'POST'});
-  alert(r.ok ? 'registered' : 'register failed (may already exist)');
+  const params = new URLSearchParams({
+    member_id: $('registerMid').value.trim(),
+    full_name: $('registerName').value.trim(),
+    national_id: $('registerNationalId').value.trim(),
+    password: $('registerPassword').value,
+  });
+  const r = await fetch(`/api/v1/auth/register?${params}`, {method:'POST'});
+  if(r.ok){
+    $('mid').value = $('registerMid').value.trim();
+    $('registerForm').reset();
+    showRegister(false);
+    toast('Account created · sign in with your new credentials');
+  } else {
+    const detail = await r.json().catch(()=>({}));
+    setPill('authState', detail.detail || 'registration failed', 'err');
+  }
 }
+
+function showRegister(show){
+  $('loginForm').hidden = show;
+  $('registerForm').hidden = !show;
+  if(!show) $('registerForm').reset();
+  setPill('authState', show ? 'create account' : 'guest');
+}
+
 async function login(){
-  const r = await fetch(`/api/v1/auth/login?member_id=${$('mid').value}&password=${$('pw').value}`,{method:'POST'});
-  if(!r.ok){ $('authState').textContent='login failed'; return; }
+  setPill('authState','signing in…','warn');
+  const params = new URLSearchParams({member_id:$('mid').value.trim(), password:$('pw').value});
+  const r = await fetch(`/api/v1/auth/login?${params}`, {method:'POST'});
+  if(!r.ok){
+    setPill('authState','sign-in failed','err');
+    $('pw').value = '';
+    $('pw').focus();
+    return;
+  }
   token = (await r.json()).access_token;
-  $('authState').textContent='authenticated ✓'; $('authState').className='ok';
-  await loadAudit();
+  const memberId = $('mid').value.trim();
+  $('pw').value = '';
+  showRiskAwaiting();
+  $('riskLiveStatus').textContent = 'Connecting';
+  $('loginGate').hidden = true;
+  $('appShell').hidden = false;
+  document.body.classList.remove('login-mode');
+  setRole('Member Portal · ' + memberId, true);
+  toast('Welcome, ' + memberId);
+  await Promise.all([loadAudit(), loadConsents(), loadTransfers(), loadRisk()]);
 }
+
+function logout(){
+  token = null;
+  showRiskAwaiting();
+  $('riskLiveStatus').textContent = 'Ready';
+  $('appShell').hidden = true;
+  $('loginGate').hidden = false;
+  document.body.classList.add('login-mode');
+  $('mid').value = '';
+  $('pw').value = '';
+  setPill('authState','guest');
+  setRole('Member Portal · Guest', false);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
 async function consent(){
-  const r = await fetch('/api/v1/members/consent',{method:'POST',headers:H(),
-    body:JSON.stringify({member_id:$('mid').value, institution_id:$('inst').value})});
-  $('consentState').textContent = r.ok ? 'consent granted ✓' : 'consent failed';
+  if(!token){ toast('Please sign in first','warn'); return; }
+  const r = await fetch('/api/v1/members/consent', {
+    method:'POST', headers:H(),
+    body:JSON.stringify({member_id:$('mid').value, institution_id:$('inst').value})
+  });
+  if(r.ok){
+    const d = await r.json();
+    setPill('consentState', `consent · ${$('inst').value}`, 'ok');
+    if(d.status === 'already_granted'){
+      toast('Consent already active for ' + $('inst').value, 'warn');
+    } else {
+      toast('Consent granted for ' + $('inst').value);
+    }
+    await loadConsents();
+  } else {
+    setPill('consentState','consent failed','err');
+    toast('Consent failed','err');
+  }
 }
+
 async function consolidate(){
-  const r = await fetch(`/api/v1/members/${$('mid').value}/contributions`,{headers:H()});
-  if(!r.ok){ alert('consolidation failed'); return; }
+  if(!token){ toast('Please sign in first','warn'); return; }
+  setPill('consentState','consolidating…','warn');
+
+  const r = await fetch(`/api/v1/members/${$('mid').value}/contributions`, {headers:H()});
+  if(!r.ok){
+    setPill('consentState','failed','err');
+    toast('Consolidation failed','err');
+    return;
+  }
   const d = await r.json();
-  $('total').textContent = d.total.toFixed(2);
-  const tb = $('contribTable').querySelector('tbody'); tb.innerHTML='';
-  d.contributions.forEach(c=>{
-    tb.innerHTML += `<tr><td>${c.institution_id}</td><td>${c.employer_id}</td>
-      <td>${c.period}</td><td>${c.contribution_type}</td><td>${c.amount.toFixed(2)}</td></tr>`;
+
+  const prev = parseFloat($('total').textContent) || 0;
+  animateNumber($('total'), prev, d.total);
+  $('total').parentElement.classList.add('bump');
+  setTimeout(()=>$('total').parentElement.classList.remove('bump'), 500);
+
+  const tb = $('contribTable').querySelector('tbody');
+  tb.innerHTML = '';
+  d.contributions.forEach((c,i)=>{
+    const tr = document.createElement('tr');
+    tr.style.animationDelay = (i*60) + 'ms';
+    tr.innerHTML = `
+      <td><strong>${c.institution_id}</strong></td>
+      <td>${c.employer_id}</td>
+      <td>${c.period}</td>
+      <td>${c.contribution_type}</td>
+      <td class="amount-cell">${c.amount.toFixed(2)}</td>`;
+    tb.appendChild(tr);
+  });
+
+  setPill('consentState', `${d.contributions.length} records`, 'ok');
+  setPill('walletPill',  `${d.contributions.length} contributions · ${d.total.toFixed(2)} USD`, 'ok');
+  toast(`Consolidated ${d.contributions.length} contributions · ${d.total.toFixed(2)} USD`);
+  await loadRisk();
+}
+
+/* ---------- My Consents ---------- */
+async function loadConsents(){
+  if(!token) return;
+  const r = await fetch(`/api/v1/members/${$('mid').value}/consents`, {headers:H()});
+  const tb = $('consentsTable').querySelector('tbody');
+  if(!tb) return;
+  if(!r.ok){
+    tb.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--ink-dim);padding:20px">
+      Could not load consents (${r.status}).</td></tr>`;
+    return;
+  }
+  const rows = await r.json();
+  if(rows.length === 0){
+    tb.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--ink-dim);padding:20px">
+      No consents granted yet.</td></tr>`;
+    return;
+  }
+  tb.innerHTML = '';
+  rows.forEach((c, i) => {
+    const granted = new Date(c.granted_at).toLocaleDateString();
+    const expires = c.expires_at ? new Date(c.expires_at).toLocaleDateString() : '—';
+    const active  = !c.revoked && (!c.expires_at || new Date(c.expires_at) > new Date());
+    const statusPill = c.revoked
+      ? '<span class="pill err">revoked</span>'
+      : (active ? '<span class="pill ok">active</span>' : '<span class="pill warn">expired</span>');
+    const action = c.revoked
+      ? '<span style="color:var(--ink-dim);font-size:12px">—</span>'
+      : `<button class="ghost-mini" onclick="revokeConsent('${c.id}')">Revoke</button>`;
+
+    const tr = document.createElement('tr');
+    tr.style.animationDelay = (i*40) + 'ms';
+    tr.innerHTML = `
+      <td><strong>${c.institution_id}</strong></td>
+      <td>${c.scope}</td>
+      <td>${granted}</td>
+      <td>${expires}</td>
+      <td>${statusPill}</td>
+      <td style="text-align:right">${action}</td>`;
+    tb.appendChild(tr);
   });
 }
-async function transfer(){
-  const r = await fetch('/api/v1/transfers',{method:'POST',headers:H(),
-    body:JSON.stringify({member_id:$('mid').value, from_institution:$('fromI').value, to_institution:$('toI').value})});
-  const d = await r.json();
-  $('transferState').textContent = `transfer ${d.transfer_id?.slice(0,8)} → ${d.status}`;
+
+async function revokeConsent(consentId){
+  if(!token){ toast('Please sign in first','warn'); return; }
+  const r = await fetch(`/api/v1/members/consent/${consentId}`, {
+    method:'DELETE', headers:H()
+  });
+  if(r.ok){
+    toast('Consent revoked');
+    await loadConsents();
+  } else {
+    toast('Revoke failed','err');
+  }
 }
-async function loadRisk(){
-  const r = await fetch(`/api/v1/risk/member/${$('mid').value}`,{headers:H()});
-  if(!r.ok){ alert('risk load failed'); return; }
-  const d = await r.json();
-  $('risk').textContent = d.risk_score.toFixed(2);
-  $('sus').textContent  = d.sustainability_score.toFixed(2);
-  $('factors').innerHTML = '<b>Top factors:</b> ' +
-    d.top_factors.map(f=>`${f.factor} (${f.weight})`).join(' • ') +
-    ` &nbsp;|&nbsp; confidence ${d.confidence}`;
-}
-async function loadAudit(){
-  const r = await fetch('/api/v1/audit',{headers:H()});
-  if(!r.ok) return;
+
+/* ---------- My Transfers ---------- */
+async function loadTransfers(){
+  if(!token) return;
+  const r = await fetch(`/api/v1/members/${$('mid').value}/transfers`, {headers:H()});
+  const tb = $('transfersTable').querySelector('tbody');
+  if(!tb) return;
+  if(!r.ok){
+    tb.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-dim);padding:20px">
+      Could not load transfers (${r.status}).</td></tr>`;
+    return;
+  }
   const rows = await r.json();
-  const tb = $('auditTable').querySelector('tbody'); tb.innerHTML='';
-  rows.forEach(a=>tb.innerHTML += `<tr><td>${a.actor}</td><td>${a.action}</td><td>${a.entry_hash}</td></tr>`);
+  if(rows.length === 0){
+    tb.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-dim);padding:20px">
+      No transfer requests yet.</td></tr>`;
+    return;
+  }
+  tb.innerHTML = '';
+  rows.forEach((t, i) => {
+    const when = new Date(t.created_at).toLocaleString();
+    const shortId = t.id.slice(0, 8);
+    const statusClass =
+      t.status === 'COMPLETED' ? 'ok' :
+      t.status === 'REJECTED'  ? 'err' :
+      t.status === 'APPROVED'  ? 'ok' : 'warn';
+    const statusPill = `<span class="pill ${statusClass}">${t.status}</span>`;
+
+    const tr = document.createElement('tr');
+    tr.style.animationDelay = (i*40) + 'ms';
+    tr.innerHTML = `
+      <td><span class="audit-hash">${shortId}…</span></td>
+      <td>${t.from_institution}</td>
+      <td>${t.to_institution}</td>
+      <td>${statusPill}</td>
+      <td style="color:var(--ink-muted)">${when}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+async function transfer(){
+  if(!token){ toast('Please sign in first','warn'); return; }
+  const r = await fetch('/api/v1/transfers', {
+    method:'POST', headers:H(),
+    body:JSON.stringify({
+      member_id:$('mid').value,
+      from_institution:$('fromI').value,
+      to_institution:$('toI').value
+    })
+  });
+  if(!r.ok){ setPill('transferState','failed','err'); toast('Transfer failed','err'); return; }
+  const d = await r.json();
+  setPill('transferState', `${d.transfer_id.slice(0,8)} · ${d.status}`, 'warn');
+  toast('Transfer requested · ' + d.transfer_id.slice(0,8));
+  await loadTransfers();
+}
+
+const FUND_IDS = ['INS-A', 'INS-B', 'INS-C'];
+function showRiskAwaiting(){
+  setRing('ringRiskFill', 0);
+  setRing('ringSusFill', 0);
+  $('risk').textContent = '–';
+  $('sus').textContent = '–';
+  $('riskConfidence').textContent = 'Confidence: —';
+  $('riskUpdated').textContent = 'Awaiting consolidated data';
+  $('factors').innerHTML = `<div class="factor-row"><span class="factor-name">Awaiting consolidated data</span><span class="factor-bar"><span class="factor-fill"></span></span><span class="factor-weight">—</span></div>`;
+  FUND_IDS.forEach(fundId=>{
+    const card = $(`fund-${fundId}`);
+    if(!card) return;
+    card.querySelector('.fund-risk-values').textContent = 'Awaiting data';
+    card.querySelector('.fund-risk-confidence').textContent = '';
+  });
+}
+function renderRisk(target, d){
+  if(target === 'member'){
+    setRing('ringRiskFill', d.risk_score);
+    setRing('ringSusFill', d.sustainability_score);
+    animateMetric($('risk'), d.risk_score);
+    animateMetric($('sus'), d.sustainability_score);
+    const confidence = $('riskConfidence');
+    const previousConfidence = parseFloat(confidence.textContent.replace(/[^0-9.-]/g, '')) || 0;
+    confidence.textContent = `Confidence: ${previousConfidence.toFixed(0)}%`;
+    animateMetric(confidence, d.confidence * 100, {digits:0, suffix:'%', prefix:'Confidence: '});
+    $('riskUpdated').textContent = `Updated: ${new Date(d.generated_at).toLocaleString()}`;
+    const container = $('factors');
+    const previousFactors = new Map(Array.from(container.querySelectorAll('.factor-row')).map(row=>[
+      row.querySelector('.factor-name').textContent,
+      {weight:parseFloat(row.querySelector('.factor-weight').textContent) || 0,
+       width:parseFloat(row.querySelector('.factor-fill').style.width) || 0}
+    ]));
+    container.innerHTML = '';
+    d.top_factors.forEach((f, index)=>{
+      const row = document.createElement('div');
+      row.className = 'factor-row';
+      row.style.animationDelay = `${index * 110}ms`;
+      const pct = Math.round(Math.max(0, Math.min(1, f.weight)) * 100);
+      const label = f.factor.replace(/_/g,' ');
+      const previous = previousFactors.get(label) || {weight:0, width:0};
+      row.innerHTML = `<span class="factor-name">${label}</span><span class="factor-bar"><span class="factor-fill" style="width:${previous.width}%"></span></span><span class="factor-weight">${previous.weight.toFixed(2)}</span>`;
+      container.appendChild(row);
+      const fill = row.querySelector('.factor-fill');
+      const weight = row.querySelector('.factor-weight');
+      setTimeout(()=>{ fill.style.width = `${pct}%`; }, 70 + index * 130);
+      animateMetric(weight, f.weight, {duration:850});
+    });
+    return;
+  }
+  const card = $(`fund-${target}`);
+  if(!card) return;
+  const values = card.querySelector('.fund-risk-values');
+  const previousMetrics = Array.from(values.querySelectorAll('strong')).map(metric=>parseFloat(metric.textContent) || 0);
+  values.innerHTML = `<span>Risk <strong>${(previousMetrics[0] || 0).toFixed(2)}</strong></span><span>Sustainability <strong>${(previousMetrics[1] || 0).toFixed(2)}</strong></span>`;
+  const metrics = values.querySelectorAll('strong');
+  animateMetric(metrics[0], d.risk_score, {duration:850});
+  animateMetric(metrics[1], d.sustainability_score, {duration:850});
+  const confidence = card.querySelector('.fund-risk-confidence');
+  const previousConfidence = parseFloat(confidence.textContent.replace(/[^0-9.-]/g, '')) || 0;
+  confidence.textContent = `Confidence ${previousConfidence.toFixed(0)}%`;
+  animateMetric(confidence, d.confidence * 100, {digits:0, suffix:'%', prefix:'Confidence ', duration:850});
+  card.classList.remove('score-reveal');
+  requestAnimationFrame(()=>card.classList.add('score-reveal'));
+}
+let riskLoadInProgress = false;
+async function loadRisk(notify=false){
+  if(!token){ if(notify) toast('Please sign in first','warn'); return; }
+  if(riskLoadInProgress) return;
+  riskLoadInProgress = true;
+  const panel = document.querySelector('[data-card="risk-dashboard"]');
+  const refreshButton = $('riskRefreshButton');
+  const liveStatus = $('riskLiveStatus');
+  panel.setAttribute('aria-busy', 'true');
+  panel.querySelectorAll('.gauge').forEach(gauge=>gauge.classList.add('is-updating'));
+  refreshButton.disabled = true;
+  liveStatus.textContent = 'Analyzing scores';
+  liveStatus.classList.add('loading');
+  const memberId = encodeURIComponent($('mid').value.trim());
+  const memberRequest = fetch(`/api/v1/risk/member/${memberId}`, {headers:H()});
+  const fundRequests = FUND_IDS.map(fundId => fetch(`/api/v1/risk/fund/${fundId}`, {headers:H()}));
+  try{
+    const [memberResponse, ...fundResponses] = await Promise.all([memberRequest, ...fundRequests]);
+    if(!memberResponse.ok) throw new Error(`Member risk request failed (${memberResponse.status})`);
+    const memberScore = await memberResponse.json();
+    if(memberScore.top_factors.length){
+      renderRisk('member', memberScore);
+      liveStatus.textContent = 'Scores updated';
+    } else {
+      showRiskAwaiting();
+      liveStatus.textContent = 'Awaiting member data';
+    }
+    await Promise.all(fundResponses.map(async (response, index)=>{
+      const cardId = `fund-${FUND_IDS[index]}`;
+      if(!response.ok) throw new Error(`Fund risk request failed (${response.status})`);
+      const score = await response.json();
+      const grid = $('fundRiskGrid');
+      let card = $(cardId);
+      if(!card){
+        card = document.createElement('div');
+        card.id = cardId;
+        card.className = 'fund-risk-card';
+        card.innerHTML = `<div class="fund-risk-title">${FUND_IDS[index]}</div><div class="fund-risk-values"></div><div class="fund-risk-confidence"></div>`;
+        grid.appendChild(card);
+      }
+      if(score.top_factors.length) renderRisk(FUND_IDS[index], score);
+      else {
+        card.querySelector('.fund-risk-values').textContent = 'Awaiting data';
+        card.querySelector('.fund-risk-confidence').textContent = '';
+      }
+    }));
+    if(notify) toast(memberScore.top_factors.length ? 'Member and fund risk scores refreshed' : 'No consolidated member data yet · fund scores refreshed', memberScore.top_factors.length ? 'ok' : 'warn');
+  } catch(error){
+    liveStatus.textContent = 'Update failed';
+    if(notify) toast('Could not load risk scores','err');
+    console.error(error);
+  } finally {
+    panel.removeAttribute('aria-busy');
+    refreshButton.disabled = false;
+    liveStatus.classList.remove('loading');
+    setTimeout(()=>panel.querySelectorAll('.gauge').forEach(gauge=>gauge.classList.remove('is-updating')), 500);
+    riskLoadInProgress = false;
+  }
+}
+
+async function verifyAuditChain(rows){
+  if(!window.crypto?.subtle) return {available:false, brokenAt:null};
+  let previousHash = 'GENESIS';
+  for(const entry of rows){
+    if(entry.prev_hash !== previousHash) return {available:true, brokenAt:entry.id};
+    const input = `${entry.prev_hash}${entry.actor}${entry.action}${entry.payload_hash}`;
+    const digest = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+    const expectedHash = Array.from(new Uint8Array(digest), byte=>byte.toString(16).padStart(2,'0')).join('');
+    if(expectedHash !== entry.entry_hash) return {available:true, brokenAt:entry.id};
+    previousHash = entry.entry_hash;
+  }
+  return {available:true, brokenAt:null};
+}
+
+function auditCaption(action){
+  const captions = {
+    LOGIN:'Member authenticated', REGISTER:'Member profile created',
+    CONSENT_GRANTED:'Data sharing permission granted', CONSENT_REVOKED:'Data sharing permission revoked',
+    CONTRIBUTION_SUBMITTED:'Contribution record submitted', CONTRIBUTIONS_READ:'Contribution history accessed',
+    TRANSFER_REQUESTED:'Portability transfer initiated',
+  };
+  return captions[action] || 'Action recorded in the audit ledger';
+}
+
+function appendAuditProof(parent, label, value){
+  const field = document.createElement('div');
+  field.className = 'audit-proof-field';
+  const name = document.createElement('span');
+  name.textContent = label;
+  const code = document.createElement('code');
+  code.textContent = value || '—';
+  field.append(name, code);
+  parent.appendChild(field);
+}
+
+function renderAuditEntry(entry, index){
+  const date = new Date(entry.timestamp);
+  const action = String(entry.action || 'UNKNOWN');
+  const actor = String(entry.actor || 'Unknown actor');
+  const card = document.createElement('article');
+  card.className = 'audit-item';
+  card.style.animationDelay = `${Math.min(index, 10) * 35}ms`;
+
+  const main = document.createElement('div');
+  main.className = 'audit-event-main';
+  const actorBox = document.createElement('div');
+  actorBox.className = 'audit-event-actor';
+  const avatar = document.createElement('span');
+  avatar.className = 'audit-avatar';
+  avatar.setAttribute('aria-hidden', 'true');
+  avatar.textContent = actor.slice(0, 2).toUpperCase();
+  const actorName = document.createElement('span');
+  actorName.className = 'audit-actor';
+  actorName.textContent = actor;
+  actorBox.append(avatar, actorName);
+
+  const actionBox = document.createElement('div');
+  const actionLabel = document.createElement('span');
+  actionLabel.className = 'audit-action';
+  if(action.includes('TRANSFER')) actionLabel.classList.add('event-transfer');
+  else if(action.includes('LOGIN') || action.includes('READ')) actionLabel.classList.add('event-access');
+  else if(action.includes('CONSENT')) actionLabel.classList.add('event-consent');
+  else if(action.includes('RISK') || action.includes('REJECT')) actionLabel.classList.add('event-risk');
+  actionLabel.textContent = action.replaceAll('_', ' ');
+  const caption = document.createElement('span');
+  caption.className = 'audit-caption';
+  caption.textContent = auditCaption(action);
+  actionBox.append(actionLabel, caption);
+
+  const hash = document.createElement('code');
+  hash.className = 'audit-hash';
+  hash.title = `Full entry hash: ${entry.entry_hash}`;
+  const hashLabel = document.createElement('span');
+  hashLabel.className = 'audit-hash-label';
+  hashLabel.textContent = 'SHA-256';
+  hash.append(hashLabel, document.createTextNode(`${entry.entry_hash.slice(0, 14)}…`));
+
+  const time = document.createElement('div');
+  time.className = 'audit-time';
+  const timeLabel = document.createElement('time');
+  timeLabel.dateTime = date.toISOString();
+  timeLabel.textContent = date.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  const dateLabel = document.createElement('span');
+  dateLabel.textContent = date.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
+  time.append(timeLabel, dateLabel);
+  main.append(actorBox, actionBox, hash, time);
+
+  const proof = document.createElement('details');
+  proof.className = 'audit-proof';
+  const summary = document.createElement('summary');
+  summary.textContent = `Inspect hash proof · event ${String(entry.id).padStart(4, '0')}`;
+  const proofGrid = document.createElement('div');
+  proofGrid.className = 'audit-proof-grid';
+  appendAuditProof(proofGrid, 'Previous hash', entry.prev_hash);
+  appendAuditProof(proofGrid, 'Payload digest', entry.payload_hash);
+  appendAuditProof(proofGrid, 'Entry hash', entry.entry_hash);
+  proof.append(summary, proofGrid);
+  card.append(main, proof);
+  return card;
+}
+
+async function loadAudit(notify=false){
+  if(!token) return;
+  const button = $('auditRefreshButton');
+  const integrity = $('auditIntegrity');
+  const rail = $('auditRail');
+  button.disabled = true;
+  rail.setAttribute('aria-busy', 'true');
+  integrity.className = 'audit-integrity checking';
+  integrity.textContent = 'Verifying chain';
+  try{
+    const response = await fetch('/api/v1/audit/full', {headers:H()});
+    if(!response.ok) throw new Error(`Audit request failed (${response.status})`);
+    const rows = await response.json();
+    const result = await verifyAuditChain(rows);
+    const recentRows = rows.slice(-50).reverse();
+    $('auditEntryCount').textContent = rows.length.toLocaleString();
+    $('auditActorCount').textContent = new Set(rows.map(entry=>entry.actor)).size.toLocaleString();
+    $('auditLatestTime').textContent = rows.length
+      ? new Date(rows[rows.length - 1].timestamp).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})
+      : 'No activity';
+    $('auditListCaption').textContent = rows.length
+      ? `Showing ${recentRows.length} newest of ${rows.length.toLocaleString()} recorded events · SHA-256 chain`
+      : 'No recorded events yet';
+
+    rail.replaceChildren();
+    if(!rows.length){
+      rail.innerHTML = '<div class="audit-empty">No audit events have been recorded yet.</div>';
+      integrity.className = 'audit-integrity';
+      integrity.textContent = 'No events';
+      return;
+    }
+    if(!result.available){
+      integrity.className = 'audit-integrity';
+      integrity.textContent = 'Verification unavailable';
+    } else if(result.brokenAt !== null){
+      integrity.className = 'audit-integrity broken';
+      integrity.textContent = `Integrity issue · event ${result.brokenAt}`;
+    } else {
+      integrity.className = 'audit-integrity verified';
+      integrity.textContent = `Chain verified · ${rows.length.toLocaleString()} entries`;
+    }
+    recentRows.forEach((entry, index)=>rail.appendChild(renderAuditEntry(entry, index)));
+    if(notify) toast(result.available && result.brokenAt === null ? 'Audit chain verified' : 'Audit chain could not be verified', result.available && result.brokenAt === null ? 'ok' : 'warn');
+  } catch(error){
+    integrity.className = 'audit-integrity';
+    integrity.textContent = 'Audit unavailable';
+    $('auditListCaption').textContent = 'Unable to retrieve the audit chain';
+    rail.innerHTML = '<div class="audit-empty">The audit trail could not be loaded. Try refreshing.</div>';
+    if(notify) toast('Could not load the audit trail','err');
+    console.error(error);
+  } finally {
+    button.disabled = false;
+    rail.setAttribute('aria-busy', 'false');
+  }
 }
 </script>
 </body>

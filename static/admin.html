@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard · Pension Portability</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0c1220;--panel:#141d30;--line:#29364d;--ink:#edf2fa;--muted:#9aa9bd;--gold:#e0b64a;--green:#67d7a0;--red:#ff8585}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+    header{padding:22px max(24px,calc((100vw - 1180px)/2));border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:16px}
+    h1{margin:0;font-size:21px}header p{margin:2px 0 0;color:var(--muted);font-size:13px}main{max-width:1180px;margin:30px auto;padding:0 24px}
+    .panel,.metric{background:var(--panel);border:1px solid var(--line);border-radius:12px}.login{max-width:440px;margin:8vh auto;padding:26px}.login h2{margin:0 0 4px}.muted{color:var(--muted)}
+    label{display:block;margin:14px 0 5px;color:var(--muted);font-size:13px}input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:#0d1525;color:var(--ink)}
+    button{border:0;border-radius:8px;padding:10px 15px;background:var(--gold);color:#16130b;font-weight:700;cursor:pointer}button.secondary{background:#25334a;color:var(--ink);border:1px solid var(--line)}
+    .actions{display:flex;gap:9px;align-items:center}#loginButton{margin-top:18px;width:100%}.error{color:var(--red);min-height:23px;margin:10px 0 0}
+    .metrics{display:grid;grid-template-columns:repeat(5,minmax(125px,1fr));gap:14px;margin:20px 0}.metric{padding:18px}.metric span{display:block;color:var(--muted);font-size:13px}.metric strong{display:block;font-size:28px;margin-top:5px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.panel{padding:18px;overflow:auto}.panel h2{font-size:16px;margin:0 0 14px}table{width:100%;border-collapse:collapse;font-size:13px;text-align:left}th,td{padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--muted);font-weight:600}.badge{color:var(--green)}#dashboard[hidden],#loginPanel[hidden]{display:none}
+    @media(max-width:800px){.metrics{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}header{padding:18px 20px}main{padding:0 16px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1>Administration</h1><p>Pension Portability Platform</p></div>
+    <div class="actions"><a href="/" style="color:var(--muted)">Member portal</a><button id="signOut" class="secondary" hidden>Sign out</button></div>
+  </header>
+  <main>
+    <section id="loginPanel" class="panel login">
+      <h2>Admin sign in</h2><div class="muted">Use an account with administrator access.</div>
+      <label for="memberId">Admin ID</label><input id="memberId" autocomplete="username" />
+      <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" />
+      <button id="loginButton">Sign in</button><p id="loginError" class="error"></p>
+    </section>
+    <section id="dashboard" hidden>
+      <div class="actions"><div class="muted" id="status">Administrator session</div><button id="refresh" class="secondary">Refresh</button></div>
+      <div class="metrics" id="metrics"></div>
+      <div class="grid">
+        <section class="panel"><h2>Members</h2><div id="membersWrap"></div></section>
+        <section class="panel"><h2>Consents</h2><div id="consentsWrap"></div></section>
+        <section class="panel"><h2>Transfers</h2><div id="transfersWrap"></div></section>
+      </div>
+    </section>
+  </main>
+  <script>
+    const $ = id => document.getElementById(id);
+    let token = sessionStorage.getItem('adminToken');
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    async function api(path) {
+      const response = await fetch(path, {headers:{Authorization:`Bearer ${token}`}});
+      if (!response.ok) { const data = await response.json().catch(()=>({})); throw new Error(data.detail || `Request failed (${response.status})`); }
+      return response.json();
+    }
+    function signedIn(value) { $('loginPanel').hidden=value; $('dashboard').hidden=!value; $('signOut').hidden=!value; }
+    async function loadDashboard() {
+      const [summary,members,consents,transfers] = await Promise.all([
+        api('/api/v1/admin/summary'), api('/api/v1/admin/members'),
+        api('/api/v1/admin/consents'), api('/api/v1/admin/transfers')
+      ]);
+      $('metrics').innerHTML = Object.entries({Members:summary.members,Institutions:summary.institutions,Contributions:summary.contributions,'Active consents':summary.active_consents,'Pending transfers':summary.pending_transfers,'Contribution total (USD)':Number(summary.total_contributions_usd).toLocaleString()})
+        .map(([label,value])=>`<div class="metric"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join('');
+      $('membersWrap').innerHTML = `<table><thead><tr><th>Member</th><th>Name</th><th>Role</th><th>Contributions</th><th>Consents</th><th>Transfers</th></tr></thead><tbody>${members.map(m=>`<tr><td>${esc(m.id)}</td><td>${esc(m.full_name)}</td><td class="${m.is_admin?'badge':''}">${m.is_admin?'Admin':'Member'}</td><td>${esc(m.contributions)}</td><td>${esc(m.active_consents)}</td><td>${esc(m.transfers)}</td></tr>`).join('') || '<tr><td colspan="6">No members</td></tr>'}</tbody></table>`;
+      $('consentsWrap').innerHTML = `<table><thead><tr><th>Member</th><th>Institution</th><th>Scope</th><th>Status</th><th>Expires</th></tr></thead><tbody>${consents.map(c=>`<tr><td>${esc(c.member_id)}</td><td>${esc(c.institution_id)}</td><td>${esc(c.scope)}</td><td>${c.revoked?'Revoked':'Active'}</td><td>${esc(c.expires_at ? new Date(c.expires_at).toLocaleDateString() : '—')}</td></tr>`).join('') || '<tr><td colspan="5">No consents</td></tr>'}</tbody></table>`;
+      $('transfersWrap').innerHTML = `<table><thead><tr><th>Member</th><th>From</th><th>To</th><th>Status</th><th>Created</th></tr></thead><tbody>${transfers.map(t=>`<tr><td>${esc(t.member_id)}</td><td>${esc(t.from_institution)}</td><td>${esc(t.to_institution)}</td><td>${esc(t.status)}</td><td>${esc(t.created_at ? new Date(t.created_at).toLocaleDateString() : '—')}</td></tr>`).join('') || '<tr><td colspan="5">No transfers</td></tr>'}</tbody></table>`;
+    }
+    $('loginButton').onclick = async () => {
+      $('loginError').textContent='';
+      const params = new URLSearchParams({member_id:$('memberId').value,password:$('password').value});
+      try {
+        const response=await fetch(`/api/v1/auth/login?${params}`,{method:'POST'});
+        if(!response.ok) throw new Error('Invalid member ID or password');
+        token=(await response.json()).access_token; sessionStorage.setItem('adminToken',token);
+        await loadDashboard(); signedIn(true);
+      } catch(error) { token=null; sessionStorage.removeItem('adminToken'); $('loginError').textContent=error.message; signedIn(false); }
+    };
+    $('refresh').onclick=async()=>{try{await loadDashboard();}catch(error){$('status').textContent=error.message;}};
+    $('signOut').onclick=()=>{token=null;sessionStorage.removeItem('adminToken');signedIn(false);};
+    if(token) loadDashboard().then(()=>signedIn(true)).catch(()=>{token=null;sessionStorage.removeItem('adminToken');signedIn(false);});
+  </script>
+</body>
+</html>

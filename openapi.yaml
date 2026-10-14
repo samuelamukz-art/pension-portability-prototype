@@ -1,0 +1,503 @@
+openapi: 3.1.0
+info:
+  title: Pension Portability Prototype API
+  version: 1.0.0
+  description: >-
+    Versioned REST API for member authentication, pension contribution
+    portability, consent management, transfers, risk scores, and audit records.
+servers:
+  - url: http://localhost:8000
+    description: Local prototype server
+security:
+  - bearerAuth: []
+tags:
+  - name: Authentication
+  - name: Institutions
+  - name: Consents
+  - name: Contributions
+  - name: Transfers
+  - name: Risk
+  - name: Audit
+paths:
+  /api/v1/auth/register:
+    post:
+      security: []
+      tags: [Authentication]
+      summary: Register a member
+      description: Credentials and member details are accepted as query parameters.
+      operationId: registerMember
+      parameters:
+        - $ref: '#/components/parameters/MemberIdQuery'
+        - name: full_name
+          in: query
+          required: true
+          schema: { type: string }
+        - name: national_id
+          in: query
+          required: true
+          schema: { type: string }
+        - name: password
+          in: query
+          required: true
+          schema: { type: string, format: password }
+      responses:
+        '200':
+          description: Member registered
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [member_id]
+                properties:
+                  member_id: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/auth/login:
+    post:
+      security: []
+      tags: [Authentication]
+      summary: Sign in and obtain a bearer token
+      operationId: loginMember
+      parameters:
+        - $ref: '#/components/parameters/MemberIdQuery'
+        - name: password
+          in: query
+          required: true
+          schema: { type: string, format: password }
+      responses:
+        '200':
+          description: Bearer token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [access_token, token_type]
+                properties:
+                  access_token: { type: string }
+                  token_type: { type: string, enum: [bearer] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/institutions:
+    get:
+      tags: [Institutions]
+      summary: List participating institutions
+      operationId: listInstitutions
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Institutions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Institution' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/members/consent:
+    post:
+      tags: [Consents]
+      summary: Grant consent for an institution
+      operationId: grantConsent
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConsentIn' }
+      responses:
+        '200':
+          description: Consent granted or already active
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConsentResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/members/consent/{consent_id}:
+    delete:
+      tags: [Consents]
+      summary: Revoke a consent
+      operationId: revokeConsent
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: consent_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Consent revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [revoked] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/members/{member_id}/consents:
+    get:
+      tags: [Consents]
+      summary: List a member's consents
+      operationId: listConsents
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/MemberIdPath'
+      responses:
+        '200':
+          description: Consent records
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Consent' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/contributions:
+    post:
+      tags: [Contributions]
+      summary: Submit a contribution
+      description: Duplicate source records are accepted with status duplicate_ignored.
+      operationId: submitContribution
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContributionIn' }
+      responses:
+        '200':
+          description: Contribution accepted or recognized as a duplicate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [accepted, duplicate_ignored] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/members/{member_id}/contributions:
+    get:
+      tags: [Contributions]
+      summary: Consolidate and list a member's contributions
+      operationId: getContributions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/MemberIdPath'
+      responses:
+        '200':
+          description: Consolidated contributions and totals
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContributionCollection' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/transfers:
+    post:
+      tags: [Transfers]
+      summary: Request a pension transfer
+      operationId: createTransfer
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TransferIn' }
+      responses:
+        '200':
+          description: Transfer request created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transfer_id, status]
+                properties:
+                  transfer_id: { type: string }
+                  status: { type: string, example: PENDING }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/transfers/{transfer_id}:
+    get:
+      tags: [Transfers]
+      summary: Get a transfer request
+      operationId: getTransfer
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: transfer_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Transfer request
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transfer_id, status, from, to]
+                properties:
+                  transfer_id: { type: string }
+                  status: { type: string }
+                  from: { type: string }
+                  to: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/members/{member_id}/transfers:
+    get:
+      tags: [Transfers]
+      summary: List a member's transfer requests
+      operationId: listTransfers
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/MemberIdPath'
+      responses:
+        '200':
+          description: Transfer requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Transfer' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/risk/fund/{fund_id}:
+    get:
+      tags: [Risk]
+      summary: Score fund risk and sustainability
+      operationId: riskForFund
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: fund_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Risk and sustainability score
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RiskOut' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/risk/member/{member_id}:
+    get:
+      tags: [Risk]
+      summary: Score a member's contribution risk
+      operationId: riskForMember
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/MemberIdPath'
+      responses:
+        '200':
+          description: Risk and sustainability score
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RiskOut' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/audit:
+    get:
+      tags: [Audit]
+      summary: Read the latest audit entries
+      description: Returns at most the 50 newest entries, with shortened entry hashes.
+      operationId: readAudit
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Recent audit entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AuditEntrySummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/audit/full:
+    get:
+      tags: [Audit]
+      summary: Read the full audit chain
+      operationId: readAuditFull
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Full audit entries in ascending order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AuditEntryFull' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    MemberIdQuery:
+      name: member_id
+      in: query
+      required: true
+      schema: { type: string }
+    MemberIdPath:
+      name: member_id
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    BadRequest:
+      description: Request could not be completed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing or invalid bearer token, or invalid credentials
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Authenticated member is not permitted to access this resource
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail: { type: array, items: { type: object } }
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail: { type: string }
+    Institution:
+      type: object
+      required: [id, name, active]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        active: { type: boolean }
+    ConsentIn:
+      type: object
+      required: [member_id, institution_id]
+      properties:
+        member_id: { type: string }
+        institution_id: { type: string }
+        scope:
+          type: string
+          default: read:contributions
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Defaults to one year from grant time when omitted.
+    ConsentResult:
+      type: object
+      required: [consent_id, status]
+      properties:
+        consent_id: { type: string }
+        status: { type: string, enum: [granted, already_granted] }
+    Consent:
+      type: object
+      required: [id, institution_id, scope, granted_at, expires_at, revoked]
+      properties:
+        id: { type: string }
+        institution_id: { type: string }
+        scope: { type: string }
+        granted_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time, nullable: true }
+        revoked: { type: boolean }
+    ContributionIn:
+      type: object
+      required: [member_id, institution_id, employer_id, period, amount, contribution_type]
+      properties:
+        member_id: { type: string }
+        institution_id: { type: string }
+        employer_id: { type: string }
+        period:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          example: '2025-01'
+        amount: { type: number, format: float, exclusiveMinimum: 0 }
+        currency: { type: string, default: USD }
+        contribution_type:
+          type: string
+          enum: [employee, employer, voluntary]
+    Contribution:
+      allOf:
+        - $ref: '#/components/schemas/ContributionIn'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string }
+    ContributionCollection:
+      type: object
+      required: [consolidation, total, contributions]
+      properties:
+        consolidation:
+          type: object
+          properties:
+            inserted: { type: integer }
+            duplicates_skipped: { type: integer }
+        total: { type: number, format: float }
+        contributions:
+          type: array
+          items: { $ref: '#/components/schemas/Contribution' }
+    TransferIn:
+      type: object
+      required: [member_id, from_institution, to_institution]
+      properties:
+        member_id: { type: string }
+        from_institution: { type: string }
+        to_institution: { type: string }
+    Transfer:
+      type: object
+      required: [id, from_institution, to_institution, status, created_at]
+      properties:
+        id: { type: string }
+        from_institution: { type: string }
+        to_institution: { type: string }
+        status: { type: string, example: PENDING }
+        created_at: { type: string, format: date-time }
+    RiskOut:
+      type: object
+      required: [fund_id, risk_score, sustainability_score, top_factors, confidence, generated_at]
+      properties:
+        fund_id: { type: string }
+        risk_score: { type: number, format: float }
+        sustainability_score: { type: number, format: float }
+        top_factors:
+          type: array
+          items:
+            type: object
+            properties:
+              factor: { type: string }
+              weight: { type: number, format: float }
+        confidence: { type: number, format: float }
+        generated_at: { type: string, format: date-time }
+    AuditEntrySummary:
+      type: object
+      required: [id, actor, action, entry_hash, timestamp]
+      properties:
+        id: { type: integer }
+        actor: { type: string }
+        action: { type: string }
+        entry_hash: { type: string, description: First 16 hash characters followed by an ellipsis. }
+        timestamp: { type: string, format: date-time }
+    AuditEntryFull:
+      type: object
+      required: [id, actor, action, payload_hash, prev_hash, entry_hash, timestamp]
+      properties:
+        id: { type: integer }
+        actor: { type: string }
+        action: { type: string }
+        payload_hash: { type: string }
+        prev_hash: { type: string }
+        entry_hash: { type: string }
+        timestamp: { type: string, format: date-time }

@@ -16,6 +16,7 @@ class Member(Base):
     full_name = Column(String, nullable=False)
     national_id_hash = Column(String, nullable=False)   # tokenized
     password_hash = Column(String, nullable=False)
+    is_admin = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Institution(Base):

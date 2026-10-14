@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Sign In · Pension Portability</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0c1220;--panel:#141d30;--line:#29364d;--ink:#edf2fa;--muted:#9aa9bd;--gold:#e0b64a;--red:#ff8585}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;display:grid;place-items:center;padding:20px}
+    main{width:min(100%,420px)}.brand{margin:0 0 20px}.brand h1{font-size:22px;margin:0}.brand p{color:var(--muted);margin:4px 0}
+    .card{padding:26px;background:var(--panel);border:1px solid var(--line);border-radius:14px}.card h2{margin:0 0 4px;font-size:19px}.muted{color:var(--muted)}
+    label{display:block;margin:16px 0 5px;color:var(--muted);font-size:13px}input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:#0d1525;color:var(--ink);font:inherit}
+    button{width:100%;margin-top:19px;border:0;border-radius:8px;padding:11px 15px;background:var(--gold);color:#16130b;font-weight:700;font:inherit;cursor:pointer}
+    .error{color:var(--red);min-height:24px;margin:10px 0 0}.demo{margin-top:16px;padding:12px;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:13px}.demo strong{color:var(--ink)}
+    footer{margin-top:18px;text-align:center}a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand"><h1>Administration</h1><p>Pension Portability Platform</p></div>
+    <section class="card">
+      <h2>Admin sign in</h2><div class="muted">Sign in with an administrator account to open the dashboard.</div>
+      <form id="loginForm">
+        <label for="memberId">Admin ID</label><input id="memberId" autocomplete="username" required />
+        <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required />
+        <button type="submit">Sign in to dashboard</button>
+      </form>
+      <p id="error" class="error" role="alert"></p>
+      <div class="demo">Local demo credentials: <strong>ADMIN</strong> / <strong>admin1234</strong><br/>Run <code>python seed.py</code> to prepare the demo account.</div>
+    </section>
+    <footer><a href="/">Return to member portal</a></footer>
+  </main>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const error = document.getElementById('error');
+      error.textContent = '';
+      const params = new URLSearchParams({
+        member_id: document.getElementById('memberId').value.trim(),
+        password: document.getElementById('password').value
+      });
+      try {
+        const response = await fetch(`/api/v1/auth/login?${params}`, {method:'POST'});
+        if (!response.ok) throw new Error('Invalid admin ID or password.');
+        const data = await response.json();
+        const check = await fetch('/api/v1/admin/summary', {headers:{Authorization:`Bearer ${data.access_token}`}});
+        if (check.status === 403) throw new Error('This account does not have administrator access.');
+        if (!check.ok) throw new Error('Could not verify administrator access.');
+        sessionStorage.setItem('adminToken', data.access_token);
+        window.location.assign('/admin/dashboard');
+      } catch (err) {
+        error.textContent = err.message || 'Sign in failed.';
+      }
+    });
+  </script>
+</body>
+</html>
